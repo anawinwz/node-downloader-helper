@@ -15,6 +15,7 @@ export const DH_STATES = {
     RESUMED: 'RESUMED',
     STOPPED: 'STOPPED',
     FINISHED: 'FINISHED',
+    CLOSED: 'CLOSED',
     FAILED: 'FAILED'
 };
 
@@ -454,18 +455,23 @@ export class DownloaderHelper extends EventEmitter {
                 if (_err) {
                     return reject(_err);
                 }
+                let eventName = '';
                 if (this.__hasFinished()) {
                     this.__setState(this.__states.FINISHED);
                     this.__pipes = [];
-                    this.emit('end', {
-                        fileName: this.__fileName,
-                        filePath: this.__filePath,
-                        totalSize: this.__total,
-                        incomplete: this.__downloaded !== this.__total,
-                        onDiskSize: this.__getFilesizeInBytes(this.__filePath),
-                        downloadedSize: this.__downloaded,
-                    });
+                    eventName = 'end';
+                } else {
+                    this.__setState(this.__states.CLOSED);
+                    eventName = 'close';
                 }
+                this.emit(eventName, {
+                    fileName: this.__fileName,
+                    filePath: this.__filePath,
+                    totalSize: this.__total,
+                    incomplete: this.__downloaded !== this.__total,
+                    onDiskSize: this.__getFilesizeInBytes(this.__filePath),
+                    downloadedSize: this.__downloaded,
+                });
                 return resolve(true);
             });
         };
